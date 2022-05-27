@@ -2,8 +2,11 @@ const { Client, Intents } = require("discord.js");
 const { token } = require("./config.json");
 const register = require("./deploy-command.js");
 const gGSpread = require("./getGoogleSpread.js");
+const schedule = require("node-schedule");
 
 const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+let uniqueJobName = "specificURL";
+let isSheduling = true
 
 client.once('ready', e => {
     console.log('Ready');
@@ -30,9 +33,22 @@ client.on('interactionCreate', async interaction =>{
     }else if(commandName === 'dsrinit')
     {
         interaction.reply("通知の送信を開始します。");
+        isSheduling = true
+        // Shedule job according to timed according to cron expression
+        var job = schedule.scheduleJob(uniqueJobName,'* * 4,20 * * *', function(){
+            if (!isSheduling) {
+                console.log("Shedule will Stop!")
+                let current_job = schedule.scheduledJobs[uniqueJobName];
+                current_job.cancel();
+                return;
+            }else{
+                gGSpread.CheckActivity(interaction.channel);
+            }
+        });
     }else if(commandName === 'dsrend')
     {
         interaction.reply("通知を停止します。");
+        isSheduling = false;
     }
 })
 
